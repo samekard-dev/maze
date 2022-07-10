@@ -30,7 +30,7 @@ func inFiled(x: Int, y: Int, dx: Int, dy: Int) -> Bool {
 	return true
 }
 
-for _ in 1...30 {
+for _ in 1...20 {
 	
 	bestValue = -1.0
 	
@@ -242,6 +242,8 @@ func evaluateField(field: [[Int]], printOn: Bool) -> Double {
 						  + 2.0) //2.0はx + dxとx + dx + dxの分
 		}
 		
+		let branchBonus = 1.0 / 8.0
+		
 		switch choice.count {
 			case 0:
 				break
@@ -249,10 +251,10 @@ func evaluateField(field: [[Int]], printOn: Bool) -> Double {
 				result = choice[0]
 			case 2:
 				result = (choice[0] + choice[1])
-				* pow(choice[0] * choice[1], 1.0 / 8.0)
+				* pow(choice[0] * choice[1], branchBonus)
 			case 3:
 				result = (choice[0] + choice[1] + choice[2])
-				* pow(choice[0] * choice[1] * choice[2], 1.0 / 8.0)
+				* pow(choice[0] * choice[1] * choice[2], branchBonus)
 			default:
 				break
 		}
