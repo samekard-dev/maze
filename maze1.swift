@@ -9,15 +9,8 @@ struct Trigger: Hashable {
 	let straight: Int
 }
 
-var w = 15//奇数であること
-var h = 15//奇数であること
-
-guard w >= 7 else {
-	fatalError("wが小さすぎます")
-}
-guard h >= 7 else {
-	fatalError("hが小さすぎます")
-}
+var w = 7//奇数であること
+var h = 7//奇数であること
 
 var bestField: [[Int]] = []
 var bestValue = -1.0
@@ -30,11 +23,21 @@ func inFiled(x: Int, y: Int, dx: Int, dy: Int) -> Bool {
 	return true
 }
 
-for _ in 1...20 {
+for i in 0...6 {
+	
+	w = 9 + i * 4
+	h = 9 + i * 4
+	
+	guard w >= 7 else {
+		fatalError("wが小さすぎます")
+	}
+	guard h >= 7 else {
+		fatalError("hが小さすぎます")
+	}
 	
 	bestValue = -1.0
 	
-	for _ in 1...20 {
+	for _ in 1...w * h {
 		
 		/*
 		 迷路を作成する
@@ -85,13 +88,13 @@ for _ in 1...20 {
 				
 				if dx == goingX && dy == goingY {
 					//直線は見てすぐわかるので長くなるのを避ける
-					let goStraight = 1.0 / pow(2.0, Double(straight)) //先に進む確率
+					let goStraight = 1.0 / pow(3.0, Double(straight)) //先に進む確率
 					guard Double.random(in: 0.0...1.0) < goStraight else {
 						continue
 					}
 				}
 				
-				let seed = 0.66 //道を開通する確率
+				let seed = 0.5 //道を開通する確率
 				
 				guard Double.random(in: 0.0...1.0) < seed else {
 					//道を開けるかどうかの決定。
@@ -112,28 +115,37 @@ for _ in 1...20 {
 			  goingX: 0, goingY: 0, straight: 0)
 		
 		while filled > 0 {
-			let t = triggers.randomElement()!
 			
-			var exe = false
-			for (dx, dy) in dirs {
-				let dx2 = 2 * dx
-				let dy2 = 2 * dy
-				guard inFiled(x: t.x, y: t.y, dx: dx2, dy: dy2) else {
-					continue
+			var leastT = Trigger(x: w, y: h, v: 0, goingX: 0, goingY: 0, straight: 0	)
+			let times = min(triggers.count, 5)
+			var counter = 0
+			while counter < times {
+				let t = triggers.randomElement()!
+				var exe = false
+				for (dx, dy) in dirs {
+					let dx2 = 2 * dx
+					let dy2 = 2 * dy
+					guard inFiled(x: t.x, y: t.y, dx: dx2, dy: dy2) else {
+						continue
+					}
+					
+					if field[t.y + dy2][t.x + dx2] == 0 {
+						exe = true
+						break
+					}
+				}		
+				if exe {
+					if t.x + t.y + Int.random(in: -(w + h) / 3...(w + h) / 3) < leastT.x + leastT.y {
+						leastT = t
+					}
+					counter += 1
+				} else {
+					triggers.remove(t)
 				}
-
-				if field[t.y + dy2][t.x + dx2] == 0 {
-					exe = true
-					break
-				}
-			}		
-			
-			if exe {
-				toNext(x: t.x, y: t.y, value: t.v,
-					 goingX: t.goingX, goingY: t.goingY, straight: t.straight)
-			} else {
-				triggers.remove(t)
 			}
+			toNext(x: leastT.x, y: leastT.y, value: leastT.v,
+				   goingX: leastT.goingX, goingY: leastT.goingY, straight: leastT.straight)
+			
 		}
 		
 		let value = evaluateField(field: field, printOn: false)
@@ -242,7 +254,7 @@ func evaluateField(field: [[Int]], printOn: Bool) -> Double {
 						  + 2.0) //2.0はx + dxとx + dx + dxの分
 		}
 		
-		let branchBonus = 1.0 / 8.0
+		let branchBonus = 1.0 / 12.0
 		
 		switch choice.count {
 			case 0:
@@ -262,7 +274,9 @@ func evaluateField(field: [[Int]], printOn: Bool) -> Double {
 	}
 	
 	func checkSideRoads() -> Double {
-		var returnValue = 0.0
+		
+		var sr: [Double] = []
+		
 		for i in stride(from: 0, through: answer.count - 3, by: 2) {
 			let x = answer[i].x
 			let y = answer[i].y
@@ -272,25 +286,28 @@ func evaluateField(field: [[Int]], printOn: Bool) -> Double {
 			}
 			e.append((x: answer[i + 1].x - x, y: answer[i + 1].y - y))
 			let value = (checkSideRoad(x: x, y: y, exclude: e))
-			* (cos(Double(field[y][x]) / Double(field[h - 1][w - 1]) * Double.pi) + 1.0)
-			returnValue += value
-			
+							* (Double(field[h - 1][w - 1] - field[y][x]) / Double(field[h - 1][w - 1]))
+			if value > 0.0 {
+				sr.append(value)
+			}
 		}
-		return returnValue
+		sr = sr.sorted(by: >)
+		let length = min(sr.count, 10)
+		var returnVal = 1.0
+		for i in 0..<length {
+			returnVal *= sr[i]
+		}
+		return returnVal
 	}
-	
-	/*
-	 y = x / (x + 1)
-	 */
 	
 	let answerLength = Double(field[h - 1][w - 1]) / Double(h + w - 1)
 	let turnCount = Double(chechTurn()) / Double(h + w - 1)
 	let choiceCount = Double(checkChoiceInAnswer()) / Double(h + w - 1)
 	
 	var valueSouece = [
-		[answerLength, 1.1, 1.5, 0.0],
+		[answerLength, 1.1, 1.3, 0.0],
 		[turnCount, 0.1, 0.3, 0.0],
-		[choiceCount, 0.25, 0.5, 0.0],
+		[choiceCount, 0.1, 0.25, 0.0],
 	]
 	
 	var value = 1.0
@@ -328,34 +345,30 @@ func printField(f: [[Int]]) {
 		print("Empty Field")
 		return
 	}
-	print("ST  ", terminator: "")
-	for _ in 0..<f[0].count {
+	for _ in 0...f[0].count + 1 {
 		print("##", terminator: "")
 	}
 	print("")
 	for i in 0..<f.count {
-		if i == 0 {
-			print("  ", terminator: "")
-		} else {
-			print("##", terminator: "")
-		}
+		print("##", terminator: "")
 		for j in 0..<f[i].count {
-			if f[i][j] == 0 {
-				print("##", terminator: "")
+			if i == 0 && j == 0 {
+				print("ST", terminator: "")
+			} else if i == h - 1 && j == w - 1 {
+				print("GL", terminator: "")
 			} else {
-				print("  ", terminator: "")
+				if f[i][j] == 0 {
+					print("##", terminator: "")
+				} else {
+					print("  ", terminator: "")
+				}
 			}
 		}
-		if i == f.count - 1 {
-			print("  ")
-		} else {
-			print("##")
-		}
+		print("##")
 	}
-	for _ in 0..<f[0].count {
+	for _ in 0...f[0].count + 1 {
 		print("##", terminator: "")
 	}
-	print("  GL")
 	print()
 }
 
