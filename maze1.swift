@@ -94,7 +94,7 @@ for i in 0...6 {
 					}
 				}
 				
-				let seed = 0.5 //道を開通する確率
+				let seed = 0.33 //道を開通する確率
 				
 				guard Double.random(in: 0.0...1.0) < seed else {
 					//道を開けるかどうかの決定。
@@ -292,7 +292,7 @@ func evaluateField(field: [[Int]], printOn: Bool) -> Double {
 			}
 		}
 		sr = sr.sorted(by: >)
-		let length = min(sr.count, 10)
+		let length = min(sr.count, (w + h) / 6, 8)
 		var returnVal = 1.0
 		for i in 0..<length {
 			returnVal *= sr[i]
