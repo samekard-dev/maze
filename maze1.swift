@@ -116,7 +116,7 @@ for i in 0...6 {
 		
 		while filled > 0 {
 			
-			var leastT = Trigger(x: w, y: h, v: 0, goingX: 0, goingY: 0, straight: 0	)
+			var leastT = Trigger(x: w * 2, y: h * 2, v: 0, goingX: 0, goingY: 0, straight: 0	)
 			let times = min(triggers.count, 5)
 			var counter = 0
 			while counter < times {
